@@ -1,21 +1,26 @@
 import { createClient } from "@supabase/supabase-js"
+import dotenv from "dotenv"
 import { readFileSync, readdirSync } from "fs"
 import { join } from "path"
 import { parse } from "yaml"
-import { serverConfig } from "../src/config"
+
+dotenv.config()
 
 const TASKS_DIR = "src/services/openai/tasks"
 
 // Check if environment variables are loaded
-if (!serverConfig.supabase.url || !serverConfig.supabase.serviceRoleKey) {
+if (
+	!process.env.NEXT_PUBLIC_SUPABASE_URL ||
+	!process.env.SUPABASE_SERVICE_ROLE_KEY
+) {
 	throw new Error("Missing required environment variables")
 }
 
 async function uploadTasks() {
 	// Create Supabase client with service role
 	const supabase = createClient(
-		serverConfig.supabase.url,
-		serverConfig.supabase.serviceRoleKey,
+		process.env.NEXT_PUBLIC_SUPABASE_URL!,
+		process.env.SUPABASE_SERVICE_ROLE_KEY!,
 		{
 			auth: { autoRefreshToken: false, persistSession: false },
 		}
