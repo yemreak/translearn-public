@@ -35,14 +35,14 @@ export function ApiKeySetup({ open, onOpenChange }: ApiKeySetupProps) {
       placeholder: 'xi-...',
       description: 'For high-quality text-to-speech',
       required: false,
-      link: 'https://elevenlabs.io/api',
+      link: 'https://try.elevenlabs.io/x8c2orrd1adk',
     },
     elevenlabs_voice_id: {
       label: 'ElevenLabs Voice ID',
       placeholder: 'abc123def456ghi789jk',
       description: 'Optional: Use your custom ElevenLabs voice for text-to-speech',
       required: false,
-      link: 'https://elevenlabs.io/voice-library',
+      link: 'https://try.elevenlabs.io/x8c2orrd1adk',
       showOnlyIf: 'elevenlabs_key',
     },
   }

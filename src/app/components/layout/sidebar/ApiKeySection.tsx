@@ -26,14 +26,14 @@ export function ApiKeySection() {
       placeholder: 'xi-...',
       description: 'For text-to-speech',
       required: false,
-      link: 'https://elevenlabs.io/api',
+      link: 'https://try.elevenlabs.io/x8c2orrd1adk',
     },
     elevenlabs_voice_id: {
       label: 'Voice ID',
       placeholder: 'abc123def456ghi789jk',
       description: 'Custom voice',
       required: false,
-      link: 'https://elevenlabs.io/voice-library',
+      link: 'https://try.elevenlabs.io/x8c2orrd1adk',
       showOnlyIf: 'elevenlabs_key',
     },
   }
