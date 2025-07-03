@@ -44,4 +44,4 @@ yarn-error.log*
 next-env.d.ts
 
 certificates
-src/services/openai/tasks
+*.yml
