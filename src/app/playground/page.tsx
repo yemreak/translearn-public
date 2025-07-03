@@ -108,13 +108,31 @@ export default function PlaygroundPage() {
 	// Memoized expensive operations
 	const segmentData = useMemo(() => {
 		if (!processingState.nativeEcho?.segments) return []
-		return processingState.nativeEcho.segments.map(segment => ({
-			start: processingState.nativeEcho!.text.indexOf(segment.out),
-			end:
-				processingState.nativeEcho!.text.indexOf(segment.out) +
-				segment.out.length,
-			text: segment.out,
-		}))
+		
+		// Calculate cumulative positions to handle repeated words correctly
+		let currentPosition = 0
+		const fullText = processingState.nativeEcho.text
+		
+		return processingState.nativeEcho.segments.map(segment => {
+			// Find the segment text starting from current position
+			const segmentText = segment.out
+			const startIndex = fullText.indexOf(segmentText, currentPosition)
+			
+			if (startIndex === -1) {
+				// Fallback: if not found, use current position
+				const start = currentPosition
+				const end = currentPosition + segmentText.length
+				currentPosition = end
+				return { start, end, text: segmentText }
+			}
+			
+			// Update current position to end of this segment
+			const start = startIndex
+			const end = startIndex + segmentText.length
+			currentPosition = end
+			
+			return { start, end, text: segmentText }
+		})
 	}, [processingState.nativeEcho])
 
 	const transliterationText = useMemo(() => {
