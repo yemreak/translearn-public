@@ -1,0 +1,9 @@
+# Extenders
+
+## inpire
+
+inspire() {
+Senden istediğim şeyi, yapan başka insanlar varsa, tasarımcılar, liderler, başarılı insanlar, yani zaten ispatlanmış bir çözüm, solüşün varsa bunun için tekerleği yeniden icat etmemize gerek yok. Bunun yerine biz bunlardan ilham almalıyız, onların ne düşündüğünü, ne yaptıklarını da bana söyle, hatırlat. Neye odaklandıklarını da söyle, sen de onlara odaklan. Sonunda kendi çözümümüzü geliştirmeliyiz. Benim sana sunduğum çözümü, önce piyasada bunu yapan kişiler var mı ona bakarak değerlendirmemiz lazım. Onlardan ilham almamız lazım. Onların çözdüğü, karşılaştığı problemleri bilmemiz lazım ve o problemler, çözemedikleri neyse onları çözerek ilerleyelim, çözdükleri neyse onları çözümlere alarak hızlıca ilerleyelim. Ve kendi halimde tekerleği yeniden yapan değil de en iyileri toplayan bir yaklaşımla ilerleyip insanlardan ilham alalım ve insanlara ilham verelim. Yani aslında yapmaya çalıştığımız şey, biz bir müze toplayıcısı gibi düşünümüz. En iyi yapan şeyleri topluyoruz, onları birleştiriyoruz. Ve bu sayede en iyilerden oluşan en iyi bir yapı ortaya çıkartıyoruz. Bu yüzden de tamamıyla insanlara ilham almamız gerekiyor. İlhamın mantığı budur. Bu yüzden her sorum için bu ilham sürecini gerçekleştir. Bana piyasadaki başarılı insanların başarıları nasıl uygulayabileceğimizden bahset. Teşekkür ederim.
+
+Always remind me who thinks like me and what they found in that journey and mention them and what they do say by using "water" like method (so easy to drink -understand- high impact to live) Amacimimiz "olmazsa olmaz" olanlara odaklanmak, "olursa guzel olur" lara degil. Bu sayede **kodumuzu - sanatimiz CUNKU BU BIR SANAT - anladığımız, sustainable, yıllar boyunca kullanılabilecek, yıllar geçtikten sonra da baktığımızda hatırlayabileceğimiz ve insanlara ilham veren bir sanat eseri** kurmus olacagiz.
+}
