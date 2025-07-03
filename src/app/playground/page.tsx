@@ -93,6 +93,7 @@ export default function PlaygroundPage() {
 		useState<boolean>(false)
 	const [isTransliterationVisible, setIsTransliterationVisible] =
 		useState<boolean>(true)
+	const [isDebugVisible, setIsDebugVisible] = useState<boolean>(false)
 
 	// Consolidated processing state
 	const [processingState, setProcessingState] = useState({
@@ -930,6 +931,50 @@ export default function PlaygroundPage() {
 											)}
 										</div>
 									)}
+
+								{/* Debug Section */}
+								{processingState.nativeEcho && (
+									<div className="space-y-2">
+										<button
+											onClick={() =>
+												setIsDebugVisible(!isDebugVisible)
+											}
+											className="flex items-center gap-2 text-xs text-orange-400/60 hover:text-orange-400/80 transition-colors"
+											aria-expanded={isDebugVisible}
+											aria-controls="debug-content"
+											aria-label="Toggle debug information">
+											<span>Debug Response</span>
+											<svg
+												className={cn(
+													"w-4 h-4 transition-transform duration-200",
+													isDebugVisible ? "rotate-180" : ""
+												)}
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="2"
+												aria-hidden="true">
+												<path d="M6 9l6 6 6-6" />
+											</svg>
+										</button>
+
+										{isDebugVisible && (
+											<div
+												id="debug-content"
+												className="animate-in slide-in-from-top-2 fade-in duration-200">
+												<div className="bg-black/40 border border-orange-500/20 rounded-lg p-3 max-h-48 overflow-auto">
+													<pre className="text-xs text-orange-300/70 font-mono whitespace-pre-wrap break-words">
+														{JSON.stringify(
+															processingState.nativeEcho,
+															null,
+															2
+														)}
+													</pre>
+												</div>
+											</div>
+										)}
+									</div>
+								)}
 								</div>
 
 								{processingState.tts?.audio_base64 && (
