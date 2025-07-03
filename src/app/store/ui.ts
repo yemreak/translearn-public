@@ -25,7 +25,7 @@ type UiStore = UiState & UiActions
 const initialState: UiState = {
 	hasSeenGuidance: false,
 	isPrivateMode: false,
-	currentLanguage: "tr", // will be updated from user preferences
+	currentLanguage: "en", // default to English
 	targetLanguage: "en", // default target language
 	isPlaygroundWarningVisible: true,
 	isAiWarningDismissed: false,
