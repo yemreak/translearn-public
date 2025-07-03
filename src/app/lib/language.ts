@@ -1,11 +1,13 @@
 import { SIDEBAR_LANGUAGE } from "../components/layout/sidebar/language"
 import { PLAYGROUND_LANGUAGE } from "../playground/language"
+import { AUTH_LANGUAGE } from "../auth/language"
 import { SupportedLanguageCode } from "../types/common"
 
 // Merge all language objects
 export const LANGUAGE = {
 	...SIDEBAR_LANGUAGE,
 	...PLAYGROUND_LANGUAGE,
+	...AUTH_LANGUAGE,
 } as const
 
 // Add these new translations to the existing object
@@ -70,6 +72,7 @@ export const TRANSLATIONS = {
 			...PLAYGROUND_LANGUAGE,
 			...COMMON_LANGUAGE,
 			...SIDEBAR_LANGUAGE,
+			...AUTH_LANGUAGE,
 		}).filter(([key]) => key.endsWith(".tr"))
 	) as Record<string, string>,
 	en: Object.fromEntries(
@@ -77,6 +80,7 @@ export const TRANSLATIONS = {
 			...PLAYGROUND_LANGUAGE,
 			...COMMON_LANGUAGE,
 			...SIDEBAR_LANGUAGE,
+			...AUTH_LANGUAGE,
 		}).filter(([key]) => key.endsWith(".en"))
 	) as Record<string, string>,
 } as const

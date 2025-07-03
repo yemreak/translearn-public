@@ -2,6 +2,7 @@
 
 import { AppLayout } from "@/app/layout/app-layout"
 import { cn } from "@/app/lib/utils"
+import { t } from "@/app/lib/language"
 import {
 	BrainIcon,
 	GoogleIcon,
@@ -9,6 +10,7 @@ import {
 	SparklesIcon,
 } from "@/components/icons"
 import { useAuth } from "@/hooks/auth"
+import { useUiStore } from "@/app/store/ui"
 import { motion } from "framer-motion"
 import { useState } from "react"
 import { HowItWorks } from "../../components/ui/beta/how-it-works"
@@ -17,6 +19,7 @@ export default function AuthPage() {
 	const auth = useAuth()
 	const [isSigningIn, setIsSigningIn] = useState(false)
 	const [showHowItWorks, setShowHowItWorks] = useState(false)
+	const currentLanguage = useUiStore(state => state.currentLanguage)
 
 	const handleSignIn = async () => {
 		try {
@@ -27,8 +30,27 @@ export default function AuthPage() {
 		}
 	}
 
+	const setCurrentLanguage = useUiStore(state => state.setCurrentLanguage)
+
+	const toggleLanguage = () => {
+		setCurrentLanguage(currentLanguage === "tr" ? "en" : "tr")
+	}
+
 	const content = (
 		<div className="flex flex-col items-center justify-center min-h-screen p-4 md:p-8">
+			{/* Language Toggle */}
+			<div className="absolute top-4 right-4">
+				<motion.button
+					onClick={toggleLanguage}
+					whileHover={{ scale: 1.05 }}
+					whileTap={{ scale: 0.95 }}
+					className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/90 transition-colors">
+					<span className="text-sm font-medium">
+						{currentLanguage === "tr" ? "EN" : "TR"}
+					</span>
+				</motion.button>
+			</div>
+
 			<motion.div
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
@@ -39,10 +61,10 @@ export default function AuthPage() {
 					animate={{ opacity: 1 }}
 					className="text-center space-y-2">
 					<h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
-						TransLearn AI
+						{t("auth.brand.title", currentLanguage)}
 					</h1>
 					<p className="text-white/50 text-base">
-						Transform Learning with AI
+						{t("auth.brand.subtitle", currentLanguage)}
 					</p>
 				</motion.div>
 
@@ -53,11 +75,10 @@ export default function AuthPage() {
 					transition={{ delay: 0.2 }}
 					className="text-center space-y-6">
 					<h2 className="text-4xl font-bold text-white">
-						Kendi Sesinle, Kendi Kelimelerinle İngilizceyi Keşfet
+						{t("auth.hero.title", currentLanguage)}
 					</h2>
 					<p className="text-white/70 text-lg max-w-xl mx-auto">
-						Ben sana başkalarının kelimeleriyle değil, kendi dünyanla
-						İngilizce öğrenmenin ne hissettirdiğini göstermek istiyorum.
+						{t("auth.hero.description", currentLanguage)}
 					</p>
 
 					{/* Quick Actions */}
@@ -78,7 +99,7 @@ export default function AuthPage() {
 							)}>
 							<GoogleIcon className="w-5 h-5" />
 							<span>
-								{isSigningIn ? "Giriş yapılıyor..." : "Hemen Başla"}
+								{isSigningIn ? t("auth.cta.signing", currentLanguage) : t("auth.cta.start", currentLanguage)}
 							</span>
 						</motion.button>
 						<motion.button
@@ -99,7 +120,7 @@ export default function AuthPage() {
 								showHowItWorks && "bg-white/20"
 							)}>
 							<SparklesIcon className="w-5 h-5" />
-							<span>Nasıl Çalışıyor?</span>
+							<span>{t("auth.cta.howItWorks", currentLanguage)}</span>
 						</motion.button>
 					</div>
 				</motion.div>
@@ -123,12 +144,10 @@ export default function AuthPage() {
 								<MicrophoneIcon className="w-12 h-12 text-blue-400" />
 								<div className="space-y-2 text-center">
 									<h3 className="text-xl font-medium text-white">
-										Kendini Anlatmanın Yeni Yolu
+										{t("auth.feature1.title", currentLanguage)}
 									</h3>
 									<p className="text-white/70 text-lg">
-										Bu, kurallarla sıkıştırılan bir dil öğrenme yöntemi
-										değil. Bu, kendini nasıl ifade edebileceğini
-										deneyimleyerek keşfetmen için bir alan.
+										{t("auth.feature1.description", currentLanguage)}
 									</p>
 								</div>
 							</div>
@@ -141,12 +160,10 @@ export default function AuthPage() {
 								<BrainIcon className="w-12 h-12 text-yellow-400" />
 								<div className="space-y-2 text-center">
 									<h3 className="text-xl font-medium text-white">
-										Nasıl Hissettirdiğini Keşfet
+										{t("auth.feature2.title", currentLanguage)}
 									</h3>
 									<p className="text-white/70 text-lg">
-										Konuşurken kendi kelimelerini duymak nasıl bir his
-										olurdu? İlk defa kendi sesinle İngilizce düşünmek,
-										dinlemek, kendi düşüncelerini İngilizce anlatmak...
+										{t("auth.feature2.description", currentLanguage)}
 									</p>
 								</div>
 							</div>
@@ -159,12 +176,10 @@ export default function AuthPage() {
 								<SparklesIcon className="w-12 h-12 text-purple-400" />
 								<div className="space-y-2 text-center">
 									<h3 className="text-xl font-medium text-white">
-										Deneyimle ve Hisset
+										{t("auth.feature3.title", currentLanguage)}
 									</h3>
 									<p className="text-white/70 text-lg">
-										Bunu hissettiğin an, öğrenme zorunluluk olmaktan çıkar.
-										Çünkü artık İngilizce senin için sadece bir ders değil,
-										kendini anlatmanın yeni bir yolu.
+										{t("auth.feature3.description", currentLanguage)}
 									</p>
 								</div>
 							</div>
@@ -194,7 +209,7 @@ export default function AuthPage() {
 						)}>
 						<GoogleIcon className="w-5 h-5" />
 						<span>
-							{isSigningIn ? "Giriş yapılıyor..." : "Google ile Devam Et"}
+							{isSigningIn ? t("auth.cta.signing", currentLanguage) : t("auth.cta.continueGoogle", currentLanguage)}
 						</span>
 					</motion.button>
 				</motion.div>
