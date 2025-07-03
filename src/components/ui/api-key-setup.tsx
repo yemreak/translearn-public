@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { UserEnvironmentKey, useUserEnvironments } from "@/hooks/user-environments"
+import { useUiStore } from "@/app/store/ui"
+import { t } from "@/app/lib/language"
 import { EyeIcon, EyeSlashIcon, KeyIcon } from "@heroicons/react/24/outline"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -21,26 +23,27 @@ export function ApiKeySetup({ open, onOpenChange }: ApiKeySetupProps) {
     elevenlabs_key: '',
     elevenlabs_voice_id: '',
   })
+  const currentLanguage = useUiStore(state => state.currentLanguage)
 
   const keyInfo = {
     openai_key: {
-      label: 'OpenAI API Key',
+      label: t("apikey.setup.openai.label", currentLanguage),
       placeholder: 'sk-...',
-      description: 'Required for transcription and AI features',
+      description: t("apikey.setup.openai.description", currentLanguage),
       required: true,
       link: 'https://platform.openai.com/api-keys',
     },
     elevenlabs_key: {
-      label: 'ElevenLabs API Key',
+      label: t("apikey.setup.elevenlabs.label", currentLanguage),
       placeholder: 'xi-...',
-      description: 'For high-quality text-to-speech',
+      description: t("apikey.setup.elevenlabs.description", currentLanguage),
       required: false,
       link: 'https://try.elevenlabs.io/x8c2orrd1adk',
     },
     elevenlabs_voice_id: {
-      label: 'ElevenLabs Voice ID',
+      label: t("apikey.setup.voiceid.label", currentLanguage),
       placeholder: 'abc123def456ghi789jk',
-      description: 'Optional: Use your custom ElevenLabs voice for text-to-speech',
+      description: t("apikey.setup.voiceid.description", currentLanguage),
       required: false,
       link: 'https://try.elevenlabs.io/x8c2orrd1adk',
       showOnlyIf: 'elevenlabs_key',
@@ -60,15 +63,15 @@ export function ApiKeySetup({ open, onOpenChange }: ApiKeySetupProps) {
         }))
 
       if (updates.length === 0) {
-        toast.error('No changes to save')
+        toast.error(t("apikey.setup.nochanges", currentLanguage))
         return
       }
 
       await Promise.all(updates)
-      toast.success('API keys saved successfully')
+      toast.success(t("apikey.setup.success", currentLanguage))
       onOpenChange(false)
     } catch (error) {
-      toast.error(`Failed to save API keys: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast.error(`${t("apikey.setup.error", currentLanguage)}: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -82,14 +85,14 @@ export function ApiKeySetup({ open, onOpenChange }: ApiKeySetupProps) {
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <KeyIcon className="w-5 h-5" />
-            API Configuration
+            {t("apikey.setup.title", currentLanguage)}
           </SheetTitle>
         </SheetHeader>
 
         <div className="mt-6 space-y-6">
           <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
             <p className="text-sm text-amber-200">
-              TransLearn requires your own API keys to function. Your keys are encrypted and never shared.
+              {t("apikey.setup.description", currentLanguage)}
             </p>
           </div>
 
@@ -118,12 +121,12 @@ export function ApiKeySetup({ open, onOpenChange }: ApiKeySetupProps) {
                     {info.required && <span className="text-red-500 ml-1">*</span>}
                     {hasKey(key as UserEnvironmentKey) && (
                       <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded">
-                        Configured
+                        {t("apikey.setup.configured", currentLanguage)}
                       </span>
                     )}
                     {isVoiceId && !hasKey(key as UserEnvironmentKey) && (
                       <span className="text-xs px-2 py-1 bg-white/10 text-white/50 rounded">
-                        Optional
+                        {t("apikey.setup.optional", currentLanguage)}
                       </span>
                     )}
                   </label>
@@ -133,7 +136,7 @@ export function ApiKeySetup({ open, onOpenChange }: ApiKeySetupProps) {
                     rel="noopener noreferrer"
                     className="text-xs text-blue-400 hover:text-blue-300"
                   >
-                    {isVoiceId ? 'Find Voice ID →' : 'Get API Key →'}
+                    {isVoiceId ? t("apikey.setup.findvoice", currentLanguage) : t("apikey.setup.getkey", currentLanguage)}
                   </a>
                 </div>
 
@@ -171,14 +174,14 @@ export function ApiKeySetup({ open, onOpenChange }: ApiKeySetupProps) {
               disabled={!keys.openai_key || updateEnvironment.isPending}
               className="flex-1"
             >
-              {updateEnvironment.isPending ? 'Saving...' : 'Save Keys'}
+              {updateEnvironment.isPending ? t("apikey.setup.saving", currentLanguage) : t("apikey.setup.save", currentLanguage)}
             </Button>
             <Button
               onClick={() => onOpenChange(false)}
               variant="ghost"
               className="flex-1"
             >
-              Cancel
+              {t("apikey.setup.cancel", currentLanguage)}
             </Button>
           </div>
         </div>
