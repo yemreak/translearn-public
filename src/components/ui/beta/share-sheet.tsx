@@ -293,7 +293,7 @@ export function ShareSheet({ isOpen, onClose, content }: ShareSheetProps) {
 	return (
 		<BottomSheet
 			isOpen={isOpen}
-			onClose={onClose}
+			onCloseAction={onClose}
 			height={contentHeight}
 			title="Share">
 			<div className="flex flex-col h-full">

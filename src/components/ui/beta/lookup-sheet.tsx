@@ -185,7 +185,7 @@ export function LookupSheet({
 	return (
 		<BottomSheet
 			isOpen={isOpen}
-			onClose={onClose}
+			onCloseAction={onClose}
 			height="50vh"
 			className="bg-black/95 backdrop-blur-xl">
 			{/* Header */}

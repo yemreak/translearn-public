@@ -30,7 +30,7 @@ export function GameSheet(props: {
 			{props.isOpen && (
 				<BottomSheet
 					isOpen={props.isOpen}
-					onClose={props.onClose}
+					onCloseAction={props.onClose}
 					height="75%"
 					title="Game">
 					<div className="flex flex-col h-full relative">

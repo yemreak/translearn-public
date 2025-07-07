@@ -10,7 +10,7 @@ import { Drawer } from "vaul"
 
 type BottomSheetProps = {
 	isOpen: boolean
-	onClose: () => void
+	onCloseAction: () => void
 	title?: string
 	height?: string
 	className?: string
@@ -19,14 +19,14 @@ type BottomSheetProps = {
 
 export function BottomSheet({
 	isOpen,
-	onClose,
+	onCloseAction,
 	title,
 	height = "50%",
 	className,
 	children,
 }: BottomSheetProps) {
 	return (
-		<Drawer.Root open={isOpen} onOpenChange={onClose}>
+		<Drawer.Root open={isOpen} onOpenChange={onCloseAction}>
 			<Drawer.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" />
 			<Drawer.Portal>
 				<Drawer.Content
