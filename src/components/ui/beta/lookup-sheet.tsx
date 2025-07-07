@@ -2,7 +2,7 @@ import { t } from "@/app/lib/language"
 import { useUiStore } from "@/app/store/ui"
 import { ExclamationTriangleIcon } from "@/components/icons"
 import { SpeakerWaveIcon } from "@heroicons/react/24/outline"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { useState } from "react"
 import { BottomSheet } from "./bottom-sheet"
 
@@ -13,7 +13,9 @@ type LookupSheetProps = {
 	transliteration?: string
 	translation?: string
 	segments?: Array<{ in: string; out: string }>
-	onTtsClick?: () => void
+	onTtsClick?: (speed: number) => void
+	speed?: number
+	onSpeedChange?: (speed: number) => void
 	isTransliterationLoading?: boolean
 	isTranslationLoading?: boolean
 	isTtsLoading?: boolean
@@ -22,16 +24,18 @@ type LookupSheetProps = {
 function TtsButton({
 	onClick,
 	isLoading,
+	speed,
 }: {
-	onClick?: () => void
+	onClick?: (speed: number) => void
 	isLoading?: boolean
+	speed: number
 }) {
 	const [isPlaying, setIsPlaying] = useState(false)
 
 	const handleClick = () => {
 		if (!onClick || isLoading) return
 		setIsPlaying(true)
-		onClick()
+		onClick(speed)
 		setTimeout(() => setIsPlaying(false), 2000)
 	}
 
@@ -105,6 +109,63 @@ function LoadingBar() {
 	)
 }
 
+function SpeedSelector({
+	speed,
+	onSpeedChange,
+}: {
+	speed: number
+	onSpeedChange: (speed: number) => void
+}) {
+	const [isOpen, setIsOpen] = useState(false)
+	const speeds = [0.5, 0.75, 1, 1.25, 1.5]
+
+	return (
+		<div className="relative">
+			<motion.button
+				onClick={() => setIsOpen(!isOpen)}
+				className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 active:bg-white/5 transition-all text-sm text-white/70"
+				whileTap={{ scale: 0.95 }}>
+				{speed}x
+			</motion.button>
+
+			<AnimatePresence>
+				{isOpen && (
+					<>
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							className="fixed inset-0 z-40"
+							onClick={() => setIsOpen(false)}
+						/>
+						<motion.div
+							initial={{ opacity: 0, scale: 0.95, y: -10 }}
+							animate={{ opacity: 1, scale: 1, y: 0 }}
+							exit={{ opacity: 0, scale: 0.95, y: -10 }}
+							className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-black/90 backdrop-blur-xl rounded-lg p-1 flex gap-1 z-50 border border-white/10">
+							{speeds.map(s => (
+								<button
+									key={s}
+									onClick={() => {
+										onSpeedChange(s)
+										setIsOpen(false)
+									}}
+									className={`px-3 py-1.5 rounded text-sm transition-all ${
+										speed === s
+											? "bg-white/20 text-white"
+											: "text-white/50 hover:text-white/70 hover:bg-white/10"
+									}`}>
+									{s}x
+								</button>
+							))}
+						</motion.div>
+					</>
+				)}
+			</AnimatePresence>
+		</div>
+	)
+}
+
 export function LookupSheet({
 	isOpen,
 	onClose,
@@ -113,11 +174,14 @@ export function LookupSheet({
 	translation,
 	segments,
 	onTtsClick,
+	speed = 1,
+	onSpeedChange,
 	isTransliterationLoading,
 	isTranslationLoading,
 	isTtsLoading,
 }: LookupSheetProps) {
 	const { currentLanguage } = useUiStore()
+	const [localSpeed, setLocalSpeed] = useState(speed)
 	return (
 		<BottomSheet
 			isOpen={isOpen}
@@ -162,10 +226,18 @@ export function LookupSheet({
 								</motion.p>
 							)}
 							{onTtsClick && (
-								<div className="mt-2">
+								<div className="mt-2 flex items-center justify-center gap-2">
 									<TtsButton
 										onClick={onTtsClick}
 										isLoading={isTtsLoading}
+										speed={localSpeed}
+									/>
+									<SpeedSelector
+										speed={localSpeed}
+										onSpeedChange={(newSpeed) => {
+											setLocalSpeed(newSpeed)
+											onSpeedChange?.(newSpeed)
+										}}
 									/>
 								</div>
 							)}

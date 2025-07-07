@@ -4,11 +4,7 @@ import { Sidebar } from "@/app/components/layout/sidebar"
 import { AppLayout } from "@/app/layout/app-layout"
 import { t } from "@/app/lib/language"
 import { useUiStore } from "@/app/store/ui"
-import {
-	NativeEchoResponse,
-	TranscribeResponse,
-	TtsResponse,
-} from "@/app/types/ai"
+import { NativeEchoResponse, TranscribeResponse, TtsResponse } from "@/app/types/ai"
 import { ClipboardIcon, SidebarIcon } from "@/components/icons"
 import { GameSheet } from "@/components/ui/beta/game-sheet"
 import { HistoryPanel } from "@/components/ui/beta/history-panel"
@@ -16,10 +12,7 @@ import { LanguageSwitcher } from "@/components/ui/beta/language-switcher"
 import { LookupSheet } from "@/components/ui/beta/lookup-sheet"
 import { ShareButton } from "@/components/ui/beta/share-button"
 import { ShareSheet } from "@/components/ui/beta/share-sheet"
-import {
-	ClickableText,
-	ClickableTextOnClick,
-} from "@/components/ui/clickable-text"
+import { ClickableText, ClickableTextOnClick } from "@/components/ui/clickable-text"
 import { ListeningButton } from "@/components/ui/e-buttons/listening"
 import { SeekingButton } from "@/components/ui/e-buttons/seeking"
 import { UnderstandingButton } from "@/components/ui/e-buttons/understanding"
@@ -34,11 +27,7 @@ import { useCallback, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { cn } from "@/app/lib/utils"
-import {
-	Language,
-	LanguageCode,
-	SupportedLanguageCode,
-} from "@/app/types/common"
+import { Language, LanguageCode, SupportedLanguageCode } from "@/app/types/common"
 import { ApiKeySetup } from "@/components/ui/api-key-setup"
 import { useUserEnvironments } from "@/hooks/user-environments"
 import {
@@ -59,6 +48,12 @@ const formatTime = (seconds: number) => {
 	const mins = Math.floor(seconds / 60)
 	const secs = Math.floor(seconds % 60)
 	return `${mins}:${secs.toString().padStart(2, "0")}`
+}
+
+// Remove parenthetical content (background sounds) from text
+const removeParentheticalContent = (text: string): string => {
+	// Remove text within parentheses and any extra spaces
+	return text.replace(/\s*\([^)]*\)\s*/g, ' ').trim().replace(/\s+/g, ' ')
 }
 
 // Character limits for different features
@@ -86,14 +81,11 @@ export default function PlaygroundPage() {
 	const historyId = useRef<string | undefined>(undefined)
 
 	// UI States
-	const [clipboardText, setClipboardText] = useState<
-		string | undefined
-	>(undefined)
-	const [isClipboardLoading, setIsClipboardLoading] =
-		useState<boolean>(false)
-	const [isTransliterationVisible, setIsTransliterationVisible] =
-		useState<boolean>(true)
+	const [clipboardText, setClipboardText] = useState<string | undefined>(undefined)
+	const [isClipboardLoading, setIsClipboardLoading] = useState<boolean>(false)
+	const [isTransliterationVisible, setIsTransliterationVisible] = useState<boolean>(true)
 	const [isDebugVisible, setIsDebugVisible] = useState<boolean>(false)
+	const [lookupSpeed, setLookupSpeed] = useState<number>(1)
 
 	// Consolidated processing state
 	const [processingState, setProcessingState] = useState({
@@ -108,16 +100,16 @@ export default function PlaygroundPage() {
 	// Memoized expensive operations
 	const segmentData = useMemo(() => {
 		if (!processingState.nativeEcho?.segments) return []
-		
+
 		// Calculate cumulative positions to handle repeated words correctly
 		let currentPosition = 0
 		const fullText = processingState.nativeEcho.text
-		
+
 		return processingState.nativeEcho.segments.map(segment => {
 			// Find the segment text starting from current position
 			const segmentText = segment.out
 			const startIndex = fullText.indexOf(segmentText, currentPosition)
-			
+
 			if (startIndex === -1) {
 				// Fallback: if not found, use current position
 				const start = currentPosition
@@ -125,31 +117,25 @@ export default function PlaygroundPage() {
 				currentPosition = end
 				return { start, end, text: segmentText }
 			}
-			
+
 			// Update current position to end of this segment
 			const start = startIndex
 			const end = startIndex + segmentText.length
 			currentPosition = end
-			
+
 			return { start, end, text: segmentText }
 		})
 	}, [processingState.nativeEcho])
 
 	const transliterationText = useMemo(() => {
-		return (
-			processingState.nativeEcho?.segments
-				?.map(s => s.lit)
-				.join(" ") || ""
-		)
+		return processingState.nativeEcho?.segments?.map(s => s.lit).join(" ") || ""
 	}, [processingState.nativeEcho?.segments])
 
 	// Game state
 	const [gameState, setGameState] = useState({
 		isOpen: false,
 		speed: 0.8,
-		segments: undefined as
-			| { in: string; out: string; lit?: string }[]
-			| undefined,
+		segments: undefined as { in: string; out: string; lit?: string }[] | undefined,
 		text: "",
 		isLoading: false,
 	})
@@ -157,8 +143,7 @@ export default function PlaygroundPage() {
 	// Feature hooks
 	const recorder = useRecorder()
 	const tts = useTtsPlayer(
-		processingState.tts?.audio_base64 &&
-			processingState.tts?.alignment
+		processingState.tts?.audio_base64 && processingState.tts?.alignment
 			? {
 					audio_base64: processingState.tts.audio_base64,
 					alignment: processingState.tts.alignment,
@@ -167,8 +152,7 @@ export default function PlaygroundPage() {
 	)
 
 	// API Key Management
-	const { hasOpenAI, isLoading: isLoadingKeys } =
-		useUserEnvironments()
+	const { hasOpenAI, isLoading: isLoadingKeys } = useUserEnvironments()
 	const [showApiKeySetup, setShowApiKeySetup] = useState(false)
 
 	// Mutations
@@ -201,17 +185,13 @@ export default function PlaygroundPage() {
 		// Voice check removed - using user's own API keys now
 
 		const result = await ttsMutation.mutateAsync({
-			text: processingState.nativeEcho.text,
+			text: removeParentheticalContent(processingState.nativeEcho.text),
 		})
 
 		if (result) {
 			await handleTtsResponse(result)
 		}
-	}, [
-		processingState.nativeEcho?.text,
-		ttsMutation,
-		handleTtsResponse,
-	])
+	}, [processingState.nativeEcho?.text, ttsMutation, handleTtsResponse])
 
 	const handleReset = useCallback(() => {
 		setProcessingState({
@@ -272,8 +252,7 @@ export default function PlaygroundPage() {
 			if (!isPrivateMode) {
 				const historyItem = await history.add({
 					source_language: currentLanguage as LanguageCode,
-					target_language:
-						preferences?.target_language as LanguageCode,
+					target_language: preferences?.target_language as LanguageCode,
 					duration: result.duration,
 					transcription: transcribeResult.text,
 					segments: [],
@@ -287,13 +266,10 @@ export default function PlaygroundPage() {
 			}
 
 			if (transcribeResult.text) {
-				const nativeEchoResult = await nativeEchoMutation.mutateAsync(
-					{
-						text: transcribeResult.text,
-						target_language:
-							preferences?.target_language as LanguageCode,
-					}
-				)
+				const nativeEchoResult = await nativeEchoMutation.mutateAsync({
+					text: transcribeResult.text,
+					target_language: preferences?.target_language as LanguageCode,
+				})
 
 				// Native echo provides everything we need in one call
 				setProcessingState(prev => ({
@@ -321,11 +297,7 @@ export default function PlaygroundPage() {
 	}, [recorder, handleReset])
 
 	const handleGameMode = useCallback(async () => {
-		if (
-			!preferences?.target_language ||
-			!processingState.transcribe?.text
-		)
-			return
+		if (!preferences?.target_language || !processingState.transcribe?.text) return
 		if (processingState.transcribe.text.length > 100) return
 
 		// Voice check removed - using user's own API keys now
@@ -337,9 +309,7 @@ export default function PlaygroundPage() {
 			target_language: preferences?.target_language as LanguageCode,
 		})
 
-		const uniqueTargets = Array.from(
-			new Set(result.segments.map(s => s.out))
-		)
+		const uniqueTargets = Array.from(new Set(result.segments.map(s => s.out)))
 		const allCached = uniqueTargets.every(text => ttsCache[text])
 
 		if (!allCached) {
@@ -465,13 +435,10 @@ export default function PlaygroundPage() {
 				setClipboardText(undefined)
 
 				// Auto native echo
-				const nativeEchoResult = await nativeEchoMutation.mutateAsync(
-					{
-						text,
-						target_language:
-							preferences?.target_language as LanguageCode,
-					}
-				)
+				const nativeEchoResult = await nativeEchoMutation.mutateAsync({
+					text,
+					target_language: preferences?.target_language as LanguageCode,
+				})
 
 				setProcessingState(prev => ({
 					...prev,
@@ -510,8 +477,7 @@ export default function PlaygroundPage() {
 				if (!isPrivateMode) {
 					const historyItem = await history.add({
 						source_language: currentLanguage as LanguageCode,
-						target_language:
-							preferences?.target_language as LanguageCode,
+						target_language: preferences?.target_language as LanguageCode,
 						transcription: text,
 						duration: 0,
 						segments: [],
@@ -550,15 +516,10 @@ export default function PlaygroundPage() {
 
 	const handleSeek = useCallback(
 		(charIndex: number, shouldPlay = false) => {
-			if (
-				!processingState.tts?.alignment?.character_start_times_seconds
-			)
-				return
+			if (!processingState.tts?.alignment?.character_start_times_seconds) return
 
 			tts.controls.seek(
-				processingState.tts.alignment.character_start_times_seconds[
-					charIndex
-				]
+				processingState.tts.alignment.character_start_times_seconds[charIndex]
 			)
 			tts.state.currentIndex = charIndex
 
@@ -585,10 +546,9 @@ export default function PlaygroundPage() {
 			}
 
 			// Get the clicked segment
-			const clickedSegment =
-				processingState.nativeEcho?.segments?.find(
-					segment => info.segment.text === segment.out
-				)
+			const clickedSegment = processingState.nativeEcho?.segments?.find(
+				segment => info.segment.text === segment.out
+			)
 
 			if (clickedSegment) {
 				// Open sheet with the segment data
@@ -613,7 +573,7 @@ export default function PlaygroundPage() {
 		]
 	)
 
-	const handleLookupTts = async () => {
+	const handleLookupTts = async (speed: number) => {
 		if (!selectedSegment?.text) return
 
 		const text = selectedSegment.text
@@ -621,9 +581,8 @@ export default function PlaygroundPage() {
 		// Check if we already have this in cache
 		if (ttsCache[text]) {
 			// Use cached audio
-			const audio = new Audio(
-				`data:audio/mp3;base64,${ttsCache[text]}`
-			)
+			const audio = new Audio(`data:audio/mp3;base64,${ttsCache[text]}`)
+			audio.playbackRate = speed
 			audio.play()
 			return
 		}
@@ -639,9 +598,8 @@ export default function PlaygroundPage() {
 			}))
 
 			// Play audio
-			const audio = new Audio(
-				`data:audio/mp3;base64,${result.audio_base64}`
-			)
+			const audio = new Audio(`data:audio/mp3;base64,${result.audio_base64}`)
+			audio.playbackRate = speed
 			audio.play()
 		} catch {
 			// Error handling is already done by the mutation
@@ -660,9 +618,7 @@ export default function PlaygroundPage() {
 			}
 
 			// If audio exists but not playing, start playing from clicked position
-			if (
-				processingState.tts?.alignment?.character_start_times_seconds
-			) {
+			if (processingState.tts?.alignment?.character_start_times_seconds) {
 				handleSeek(info.charIndex, true)
 			}
 		},
@@ -690,19 +646,14 @@ export default function PlaygroundPage() {
 				handleCancelRecording()
 			}
 			// Ctrl+Enter for TTS
-			if (
-				e.ctrlKey &&
-				e.key === "Enter" &&
-				processingState.nativeEcho?.text
-			) {
+			if (e.ctrlKey && e.key === "Enter" && processingState.nativeEcho?.text) {
 				e.preventDefault()
 				handleTts()
 			}
 		}
 
 		document.addEventListener("keydown", handleKeyDown)
-		return () =>
-			document.removeEventListener("keydown", handleKeyDown)
+		return () => document.removeEventListener("keydown", handleKeyDown)
 	}, [
 		recorder.isRecording,
 		processingState.nativeEcho?.text,
@@ -741,12 +692,9 @@ export default function PlaygroundPage() {
 					onClick={handleStopRecording}
 				/>
 			)
-		if (transcribeMutation.isPending)
-			return <UnderstandingButton color="gray" />
-		if (nativeEchoMutation.isPending)
-			return <UnderstandingButton color="orange" />
-		if (ttsMutation.isPending)
-			return <UnderstandingButton color="purple" />
+		if (transcribeMutation.isPending) return <UnderstandingButton color="gray" />
+		if (nativeEchoMutation.isPending) return <UnderstandingButton color="orange" />
+		if (ttsMutation.isPending) return <UnderstandingButton color="purple" />
 
 		return (
 			<div ref={footerButtonRef} tabIndex={0}>
@@ -756,14 +704,10 @@ export default function PlaygroundPage() {
 	}
 
 	const getDescription = () => {
-		if (recorder.isRecording)
-			return t("description.stopRecording", currentLanguage)
-		if (transcribeMutation.isPending)
-			return t("description.processing", currentLanguage)
-		if (nativeEchoMutation.isPending)
-			return t("description.crafting", currentLanguage)
-		if (ttsMutation.isPending)
-			return t("description.generating", currentLanguage)
+		if (recorder.isRecording) return t("description.stopRecording", currentLanguage)
+		if (transcribeMutation.isPending) return t("description.processing", currentLanguage)
+		if (nativeEchoMutation.isPending) return t("description.crafting", currentLanguage)
+		if (ttsMutation.isPending) return t("description.generating", currentLanguage)
 		return t("description.start", currentLanguage)
 	}
 
@@ -781,8 +725,8 @@ export default function PlaygroundPage() {
 								{t("apiKey.required", currentLanguage)}
 							</h2>
 							<p className="text-white/70 max-w-sm">
-								To use TransLearn, you need to configure your API
-								keys. Your keys are encrypted and never shared.
+								To use TransLearn, you need to configure your API keys. Your keys are
+								encrypted and never shared.
 							</p>
 						</div>
 						<button
@@ -841,122 +785,112 @@ export default function PlaygroundPage() {
 					)}
 
 				<div className="space-y-4">
-					{processingState.transcribe?.text &&
-						!recorder.isRecording && (
-							<>
-								<div className="space-y-4">
-									{/* Original Text */}
-									<div ref={transcribeTextRef} className="mb-3">
+					{processingState.transcribe?.text && !recorder.isRecording && (
+						<>
+							<div className="space-y-4">
+								{/* Original Text */}
+								<div ref={transcribeTextRef} className="mb-3">
+									<ClickableText
+										text={processingState.transcribe.text}
+										segments={[
+											{
+												start: 0,
+												end: processingState.transcribe.text.length,
+												text: processingState.transcribe.text,
+											},
+										]}
+										className="text-lg font-medium text-white/90"
+									/>
+								</div>
+
+								{/* Translation */}
+								{processingState.nativeEcho?.text && (
+									<div className="mb-2">
 										<ClickableText
-											text={processingState.transcribe.text}
-											segments={[
-												{
-													start: 0,
-													end: processingState.transcribe.text.length,
-													text: processingState.transcribe.text,
-												},
-											]}
-											className="text-lg font-medium text-white/90"
-										/>
-									</div>
-
-									{/* Translation */}
-									{processingState.nativeEcho?.text && (
-										<div className="mb-2">
-											<ClickableText
-												text={processingState.nativeEcho.text}
-												segments={
-													segmentData.length > 0
-														? segmentData
-														: [
-																{
-																	start: 0,
-																	end: processingState.nativeEcho.text
-																		.length,
-																	text: processingState.nativeEcho
-																		.text,
-																},
-														  ]
-												}
-												highlightSegments={
-													!!processingState.nativeEcho.segments
-												}
-												highlightIndex={
-													tts.state.currentIndex > 0 &&
-													processingState.tts?.alignment
-														? tts.state.currentIndex
-														: undefined
-												}
-												className="text-base text-white/70 hover:text-white/90 transition-colors cursor-pointer"
-												onClick={onTransCreationClick}
-											/>
-										</div>
-									)}
-
-									{/* Transliteration */}
-									{processingState.nativeEcho?.segments && (
-										<div className="space-y-2">
-											<button
-												onClick={() =>
-													setIsTransliterationVisible(
-														!isTransliterationVisible
-													)
-												}
-												className="flex items-center gap-2 text-xs text-white/60 hover:text-white/80 transition-colors"
-												aria-expanded={isTransliterationVisible}
-												aria-controls="transliteration-content"
-												aria-label="Toggle pronunciation display">
-												<span>Pronunciation</span>
-												<svg
-													className={cn(
-														"w-4 h-4 transition-transform duration-200",
-														isTransliterationVisible
-															? "rotate-180"
-															: ""
-													)}
-													viewBox="0 0 24 24"
-													fill="none"
-													stroke="currentColor"
-													strokeWidth="2"
-													aria-hidden="true">
-													<path d="M6 9l6 6 6-6" />
-												</svg>
-											</button>
-
-											{isTransliterationVisible && (
-												<div
-													id="transliteration-content"
-													className="animate-in slide-in-from-top-2 fade-in duration-200">
-													<ClickableText
-														text={transliterationText}
-														segments={[
+											text={removeParentheticalContent(processingState.nativeEcho.text)}
+											segments={
+												segmentData.length > 0
+													? segmentData.map(segment => ({
+															...segment,
+															text: removeParentheticalContent(segment.text)
+														  }))
+													: [
 															{
 																start: 0,
-																end: transliterationText.length,
-																text: transliterationText,
+																end: removeParentheticalContent(processingState.nativeEcho.text).length,
+																text: removeParentheticalContent(processingState.nativeEcho.text),
 															},
-														]}
-														highlightIndex={
-															tts.state.currentIndex > 0 &&
-															processingState.tts?.alignment
-																? tts.state.currentIndex
-																: undefined
-														}
-														className="text-sm font-mono text-white/50 tracking-wide hover:text-white/70 transition-colors cursor-pointer px-2 py-1 rounded bg-white/5 hover:bg-white/10 border border-white/10"
-														onClick={onTransliterationClick}
-													/>
-												</div>
-											)}
-										</div>
-									)}
+													  ]
+											}
+											highlightSegments={!!processingState.nativeEcho.segments}
+											highlightIndex={
+												tts.state.currentIndex > 0 && processingState.tts?.alignment
+													? tts.state.currentIndex
+													: undefined
+											}
+											className="text-base text-white/70 hover:text-white/90 transition-colors cursor-pointer"
+											onClick={onTransCreationClick}
+										/>
+									</div>
+								)}
+
+								{/* Transliteration */}
+								{processingState.nativeEcho?.segments && (
+									<div className="space-y-2">
+										<button
+											onClick={() =>
+												setIsTransliterationVisible(!isTransliterationVisible)
+											}
+											className="flex items-center gap-2 text-xs text-white/60 hover:text-white/80 transition-colors"
+											aria-expanded={isTransliterationVisible}
+											aria-controls="transliteration-content"
+											aria-label="Toggle pronunciation display">
+											<span>Pronunciation</span>
+											<svg
+												className={cn(
+													"w-4 h-4 transition-transform duration-200",
+													isTransliterationVisible ? "rotate-180" : ""
+												)}
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="2"
+												aria-hidden="true">
+												<path d="M6 9l6 6 6-6" />
+											</svg>
+										</button>
+
+										{isTransliterationVisible && (
+											<div
+												id="transliteration-content"
+												className="animate-in slide-in-from-top-2 fade-in duration-200">
+												<ClickableText
+													text={transliterationText}
+													segments={[
+														{
+															start: 0,
+															end: transliterationText.length,
+															text: transliterationText,
+														},
+													]}
+													highlightIndex={
+														tts.state.currentIndex > 0 && processingState.tts?.alignment
+															? tts.state.currentIndex
+															: undefined
+													}
+													className="text-sm font-mono text-white/50 tracking-wide hover:text-white/70 transition-colors cursor-pointer px-2 py-1 rounded bg-white/5 hover:bg-white/10 border border-white/10"
+													onClick={onTransliterationClick}
+												/>
+											</div>
+										)}
+									</div>
+								)}
 
 								{/* Debug Section */}
 								{processingState.nativeEcho && (
 									<div className="space-y-2">
 										<button
-											onClick={() =>
-												setIsDebugVisible(!isDebugVisible)
-											}
+											onClick={() => setIsDebugVisible(!isDebugVisible)}
 											className="flex items-center gap-2 text-xs text-orange-400/60 hover:text-orange-400/80 transition-colors"
 											aria-expanded={isDebugVisible}
 											aria-controls="debug-content"
@@ -982,64 +916,51 @@ export default function PlaygroundPage() {
 												className="animate-in slide-in-from-top-2 fade-in duration-200">
 												<div className="bg-black/40 border border-orange-500/20 rounded-lg p-3 max-h-48 overflow-auto">
 													<pre className="text-xs text-orange-300/70 font-mono whitespace-pre-wrap break-words">
-														{JSON.stringify(
-															processingState.nativeEcho,
-															null,
-															2
-														)}
+														{JSON.stringify(processingState.nativeEcho, null, 2)}
 													</pre>
 												</div>
 											</div>
 										)}
 									</div>
 								)}
-								</div>
+							</div>
 
-								{processingState.tts?.audio_base64 && (
-									<TtsPlayer
-										isPlaying={tts.state.isPlaying}
-										currentTime={tts.state.currentTime}
-										duration={tts.state.duration}
-										speed={tts.state.speed}
-										onPlayPause={
-											tts.state.isPlaying
-												? tts.controls.pause
-												: tts.controls.play
-										}
-										onSeek={time => tts.controls.seek(time)}
-										onSpeedChange={speed =>
-											tts.controls.setSpeed(speed)
-										}
-										speeds={[0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2]}
-										seekStep={0.7}
-									/>
-								)}
-							</>
-						)}
+							{processingState.tts?.audio_base64 && (
+								<TtsPlayer
+									isPlaying={tts.state.isPlaying}
+									currentTime={tts.state.currentTime}
+									duration={tts.state.duration}
+									speed={tts.state.speed}
+									onPlayPause={
+										tts.state.isPlaying ? tts.controls.pause : tts.controls.play
+									}
+									onSeek={time => tts.controls.seek(time)}
+									onSpeedChange={speed => tts.controls.setSpeed(speed)}
+									speeds={[0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2]}
+									seekStep={0.7}
+								/>
+							)}
+						</>
+					)}
 
-					{processingState.nativeEcho?.text &&
-						!processingState.tts?.audio_base64 && (
-							<ProgressButton
-								nature="foreground"
-								color="purple"
-								isLoading={ttsMutation.isPending}
-								loadingText={t("action.tts", currentLanguage)}
-								onClick={handleTts}
-								disabled={
-									processingState.nativeEcho.text.length >
-									TTS_CHAR_LIMIT
-								}>
-								<div className="flex items-center justify-center gap-2">
-									<SpeakerWaveIcon className="w-5 h-5" />
-									<span className="text-white/70">
-										{processingState.nativeEcho.text.length >
-										TTS_CHAR_LIMIT
-											? t("content.textTooLong", currentLanguage)
-											: t("content.listen", currentLanguage)}
-									</span>
-								</div>
-							</ProgressButton>
-						)}
+					{processingState.nativeEcho?.text && !processingState.tts?.audio_base64 && (
+						<ProgressButton
+							nature="foreground"
+							color="purple"
+							isLoading={ttsMutation.isPending}
+							loadingText={t("action.tts", currentLanguage)}
+							onClick={handleTts}
+							disabled={removeParentheticalContent(processingState.nativeEcho.text).length > TTS_CHAR_LIMIT}>
+							<div className="flex items-center justify-center gap-2">
+								<SpeakerWaveIcon className="w-5 h-5" />
+								<span className="text-white/70">
+									{removeParentheticalContent(processingState.nativeEcho.text).length > TTS_CHAR_LIMIT
+										? t("content.textTooLong", currentLanguage)
+										: t("content.listen", currentLanguage)}
+								</span>
+							</div>
+						</ProgressButton>
+					)}
 
 					{/* Game Mode Button */}
 					{processingState.transcribe?.text && (
@@ -1049,15 +970,11 @@ export default function PlaygroundPage() {
 							isLoading={gameState.isLoading}
 							loadingText={t("action.gamifying", currentLanguage)}
 							onClick={handleGameMode}
-							disabled={
-								processingState.transcribe.text.length >
-								GAME_MODE_CHAR_LIMIT
-							}>
+							disabled={processingState.transcribe.text.length > GAME_MODE_CHAR_LIMIT}>
 							<div className="flex items-center justify-center gap-2">
 								<PuzzlePieceIcon className="w-5 h-5" />
 								<span className="text-white/70">
-									{processingState.transcribe.text.length >
-									GAME_MODE_CHAR_LIMIT
+									{processingState.transcribe.text.length > GAME_MODE_CHAR_LIMIT
 										? t("content.textTooLong", currentLanguage)
 										: t("content.gameMode", currentLanguage)}
 								</span>
@@ -1066,17 +983,13 @@ export default function PlaygroundPage() {
 					)}
 
 					{/* Share Button */}
-					{processingState.transcribe?.text &&
-						!recorder.isRecording && (
-							<>
-								<div className="flex justify-center items-center gap-4">
-									<ShareButton
-										onClick={() => setIsShareSheetOpen(true)}
-										type="ios"
-									/>
-								</div>
-							</>
-						)}
+					{processingState.transcribe?.text && !recorder.isRecording && (
+						<>
+							<div className="flex justify-center items-center gap-4">
+								<ShareButton onClick={() => setIsShareSheetOpen(true)} type="ios" />
+							</div>
+						</>
+					)}
 
 					{(recorder.isRecording || transcribeMutation.isPending) && (
 						<div className="animate-pulse space-y-4">
@@ -1109,11 +1022,7 @@ export default function PlaygroundPage() {
 				</div>
 
 				{/* Screen reader announcements */}
-				<div
-					id="sr-announcements"
-					className="sr-only"
-					aria-live="polite"
-					role="status">
+				<div id="sr-announcements" className="sr-only" aria-live="polite" role="status">
 					{recorder.isRecording && "Recording started"}
 					{transcribeMutation.isPending && "Processing speech"}
 					{nativeEchoMutation.isPending && "Generating translation"}
@@ -1128,12 +1037,10 @@ export default function PlaygroundPage() {
 						: "Click to start recording your voice. Microphone access required. You can also press Space when focused."}
 				</div>
 				<div id="tts-char-limit" className="sr-only">
-					Maximum {TTS_CHAR_LIMIT} characters allowed for audio
-					generation
+					Maximum {TTS_CHAR_LIMIT} characters allowed for audio generation
 				</div>
 				<div id="game-mode-char-limit" className="sr-only">
-					Maximum {GAME_MODE_CHAR_LIMIT} characters allowed for game
-					mode
+					Maximum {GAME_MODE_CHAR_LIMIT} characters allowed for game mode
 				</div>
 
 				{/* History Panel */}
@@ -1141,8 +1048,7 @@ export default function PlaygroundPage() {
 					<div
 						className={cn(
 							"space-y-2",
-							isPrivateMode &&
-								"opacity-30 pointer-events-none select-none"
+							isPrivateMode && "opacity-30 pointer-events-none select-none"
 						)}>
 						<HistoryPanel
 							items={history.items}
@@ -1225,8 +1131,7 @@ export default function PlaygroundPage() {
 											: clipboardText
 											? "bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/10"
 											: "hover:bg-white/10 active:bg-white/5",
-										isClipboardLoading &&
-											"opacity-50 pointer-events-none"
+										isClipboardLoading && "opacity-50 pointer-events-none"
 									)}>
 									{isClipboardLoading ? (
 										<ArrowPathIcon className="w-6 h-6 text-white/70 animate-spin" />
@@ -1238,18 +1143,13 @@ export default function PlaygroundPage() {
 										<ClipboardIcon className="w-6 h-6 text-white/70" />
 									)}
 								</button>
-								{clipboardText &&
-									!isClipboardLoading &&
-									!recorder.isRecording && (
-										<div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg bg-black/90 backdrop-blur-md border border-white/10 whitespace-nowrap">
-											<p className="text-xs text-white/70">
-												{t(
-													"content.confirmClipboard",
-													currentLanguage
-												)}
-											</p>
-										</div>
-									)}
+								{clipboardText && !isClipboardLoading && !recorder.isRecording && (
+									<div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg bg-black/90 backdrop-blur-md border border-white/10 whitespace-nowrap">
+										<p className="text-xs text-white/70">
+											{t("content.confirmClipboard", currentLanguage)}
+										</p>
+									</div>
+								)}
 							</div>
 						),
 					},
@@ -1263,15 +1163,12 @@ export default function PlaygroundPage() {
 								value={currentLanguage}
 								onChange={(newLanguage: LanguageCode) => {
 									// Update UI store
-									setCurrentLanguage(
-										newLanguage as SupportedLanguageCode
-									)
+									setCurrentLanguage(newLanguage as SupportedLanguageCode)
 
 									// Also update the preferences in database
 									if (preferences?.update) {
 										preferences.update({
-											source_language:
-												newLanguage as SupportedLanguageCode,
+											source_language: newLanguage as SupportedLanguageCode,
 										})
 									}
 								}}
@@ -1281,10 +1178,7 @@ export default function PlaygroundPage() {
 				}}
 			/>
 
-			<Sidebar
-				isOpen={isHistoryOpen}
-				onClose={() => setIsHistoryOpen(false)}
-			/>
+			<Sidebar isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
 			<ShareSheet
 				isOpen={isShareSheetOpen}
 				onClose={() => setIsShareSheetOpen(false)}
@@ -1312,9 +1206,7 @@ export default function PlaygroundPage() {
 			/>
 			<GameSheet
 				isOpen={gameState.isOpen}
-				onClose={() =>
-					setGameState(prev => ({ ...prev, isOpen: false }))
-				}
+				onClose={() => setGameState(prev => ({ ...prev, isOpen: false }))}
 				texts={{
 					in: processingState.transcribe?.text || "",
 					out: gameState.text || "",
@@ -1322,13 +1214,9 @@ export default function PlaygroundPage() {
 				}}
 				segments={gameState.segments}
 				speed={gameState.speed}
-				onSpeedChange={speed =>
-					setGameState(prev => ({ ...prev, speed }))
-				}
+				onSpeedChange={speed => setGameState(prev => ({ ...prev, speed }))}
 				language={currentLanguage}
-				onComplete={() =>
-					setGameState(prev => ({ ...prev, isOpen: false }))
-				}
+				onComplete={() => setGameState(prev => ({ ...prev, isOpen: false }))}
 				onItemClick={async item => {
 					if (item.type === "source") return
 
@@ -1347,9 +1235,7 @@ export default function PlaygroundPage() {
 					}
 
 					// Create audio element and play
-					const audio = new Audio(
-						`data:audio/mp3;base64,${ttsCache[item.text]}`
-					)
+					const audio = new Audio(`data:audio/mp3;base64,${ttsCache[item.text]}`)
 					audio.playbackRate = gameState.speed
 					audio.play()
 				}}
@@ -1357,10 +1243,7 @@ export default function PlaygroundPage() {
 			/>
 
 			{/* API Key Setup Modal */}
-			<ApiKeySetup
-				open={showApiKeySetup}
-				onOpenChange={setShowApiKeySetup}
-			/>
+			<ApiKeySetup open={showApiKeySetup} onOpenChange={setShowApiKeySetup} />
 		</>
 	)
 }
