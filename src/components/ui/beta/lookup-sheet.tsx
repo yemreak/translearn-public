@@ -117,13 +117,13 @@ function SpeedSelector({
 	onSpeedChange: (speed: number) => void
 }) {
 	const [isOpen, setIsOpen] = useState(false)
-	const speeds = [0.5, 0.75, 1, 1.25, 1.5]
+	const speeds = [0.6, 0.7, 0.8, 1, 1.2]
 
 	return (
 		<div className="relative">
 			<motion.button
 				onClick={() => setIsOpen(!isOpen)}
-				className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 active:bg-white/5 transition-all text-sm text-white/70"
+				className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 active:bg-white/10 transition-all text-sm font-medium text-white/80"
 				whileTap={{ scale: 0.95 }}>
 				{speed}x
 			</motion.button>
@@ -139,25 +139,27 @@ function SpeedSelector({
 							onClick={() => setIsOpen(false)}
 						/>
 						<motion.div
-							initial={{ opacity: 0, scale: 0.95, y: -10 }}
+							initial={{ opacity: 0, scale: 0.95, y: 10 }}
 							animate={{ opacity: 1, scale: 1, y: 0 }}
-							exit={{ opacity: 0, scale: 0.95, y: -10 }}
-							className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-black/90 backdrop-blur-xl rounded-lg p-1 flex gap-1 z-50 border border-white/10">
-							{speeds.map(s => (
-								<button
-									key={s}
-									onClick={() => {
-										onSpeedChange(s)
-										setIsOpen(false)
-									}}
-									className={`px-3 py-1.5 rounded text-sm transition-all ${
-										speed === s
-											? "bg-white/20 text-white"
-											: "text-white/50 hover:text-white/70 hover:bg-white/10"
-									}`}>
-									{s}x
-								</button>
-							))}
+							exit={{ opacity: 0, scale: 0.95, y: 10 }}
+							className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl rounded-t-2xl p-4 z-50 border-t border-white/10">
+							<div className="flex justify-center gap-2">
+								{speeds.map(s => (
+									<button
+										key={s}
+										onClick={() => {
+											onSpeedChange(s)
+											setIsOpen(false)
+										}}
+										className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+											speed === s
+												? "bg-white/20 text-white"
+												: "text-white/50 hover:text-white/70 hover:bg-white/10"
+										}`}>
+										{s}x
+									</button>
+								))}
+							</div>
 						</motion.div>
 					</>
 				)}
