@@ -53,7 +53,10 @@ const formatTime = (seconds: number) => {
 // Remove parenthetical content (background sounds) from text
 const removeParentheticalContent = (text: string): string => {
 	// Remove text within parentheses and any extra spaces
-	return text.replace(/\s*\([^)]*\)\s*/g, ' ').trim().replace(/\s+/g, ' ')
+	return text
+		.replace(/\s*\([^)]*\)\s*/g, " ")
+		.trim()
+		.replace(/\s+/g, " ")
 }
 
 // Character limits for different features
@@ -322,7 +325,7 @@ export default function PlaygroundPage() {
 						try {
 							// Using user's own API key for TTS
 							const ttsResult = await ttsMutation.mutateAsync({
-								text,
+								text: removeParentheticalContent(text),
 							})
 							newCacheEntries[text] = ttsResult.audio_base64
 						} catch {
@@ -589,7 +592,9 @@ export default function PlaygroundPage() {
 
 		// Generate new TTS and cache it
 		try {
-			const result = await ttsMutation.mutateAsync({ text })
+			const result = await ttsMutation.mutateAsync({
+				text: removeParentheticalContent(text),
+			})
 
 			// Update cache
 			setTtsCache(prev => ({
@@ -812,13 +817,17 @@ export default function PlaygroundPage() {
 												segmentData.length > 0
 													? segmentData.map(segment => ({
 															...segment,
-															text: removeParentheticalContent(segment.text)
-														  }))
+															text: removeParentheticalContent(segment.text),
+													  }))
 													: [
 															{
 																start: 0,
-																end: removeParentheticalContent(processingState.nativeEcho.text).length,
-																text: removeParentheticalContent(processingState.nativeEcho.text),
+																end: removeParentheticalContent(
+																	processingState.nativeEcho.text
+																).length,
+																text: removeParentheticalContent(
+																	processingState.nativeEcho.text
+																),
 															},
 													  ]
 											}
@@ -950,11 +959,15 @@ export default function PlaygroundPage() {
 							isLoading={ttsMutation.isPending}
 							loadingText={t("action.tts", currentLanguage)}
 							onClick={handleTts}
-							disabled={removeParentheticalContent(processingState.nativeEcho.text).length > TTS_CHAR_LIMIT}>
+							disabled={
+								removeParentheticalContent(processingState.nativeEcho.text).length >
+								TTS_CHAR_LIMIT
+							}>
 							<div className="flex items-center justify-center gap-2">
 								<SpeakerWaveIcon className="w-5 h-5" />
 								<span className="text-white/70">
-									{removeParentheticalContent(processingState.nativeEcho.text).length > TTS_CHAR_LIMIT
+									{removeParentheticalContent(processingState.nativeEcho.text).length >
+									TTS_CHAR_LIMIT
 										? t("content.textTooLong", currentLanguage)
 										: t("content.listen", currentLanguage)}
 								</span>
@@ -1114,42 +1127,44 @@ export default function PlaygroundPage() {
 				footer={{
 					left: {
 						content: (
-							<div className="relative">
-								<button
-									onClick={e => {
-										e.stopPropagation() // Prevent click outside handler
-										if (recorder.isRecording) {
-											handleCancelRecording()
-										} else {
-											handleClipboardPaste()
-										}
-									}}
-									className={cn(
-										"p-2 rounded-lg transition-all duration-300",
-										recorder.isRecording
-											? "bg-red-500/20 hover:bg-red-500/30 active:bg-red-500/10"
-											: clipboardText
-											? "bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/10"
-											: "hover:bg-white/10 active:bg-white/5",
-										isClipboardLoading && "opacity-50 pointer-events-none"
-									)}>
-									{isClipboardLoading ? (
-										<ArrowPathIcon className="w-6 h-6 text-white/70 animate-spin" />
-									) : recorder.isRecording ? (
-										<XMarkIcon className="w-6 h-6 text-red-500" />
-									) : clipboardText ? (
-										<CheckCircleIcon className="w-6 h-6 text-green-500" />
-									) : (
-										<ClipboardIcon className="w-6 h-6 text-white/70" />
+							<div className="flex items-center gap-2">
+								<div className="relative">
+									<button
+										onClick={e => {
+											e.stopPropagation() // Prevent click outside handler
+											if (recorder.isRecording) {
+												handleCancelRecording()
+											} else {
+												handleClipboardPaste()
+											}
+										}}
+										className={cn(
+											"p-2 rounded-lg transition-all duration-300",
+											recorder.isRecording
+												? "bg-red-500/20 hover:bg-red-500/30 active:bg-red-500/10"
+												: clipboardText
+												? "bg-green-500/20 hover:bg-green-500/30 active:bg-green-500/10"
+												: "hover:bg-white/10 active:bg-white/5",
+											isClipboardLoading && "opacity-50 pointer-events-none"
+										)}>
+										{isClipboardLoading ? (
+											<ArrowPathIcon className="w-6 h-6 text-white/70 animate-spin" />
+										) : recorder.isRecording ? (
+											<XMarkIcon className="w-6 h-6 text-red-500" />
+										) : clipboardText ? (
+											<CheckCircleIcon className="w-6 h-6 text-green-500" />
+										) : (
+											<ClipboardIcon className="w-6 h-6 text-white/70" />
+										)}
+									</button>
+									{clipboardText && !isClipboardLoading && !recorder.isRecording && (
+										<div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg bg-black/90 backdrop-blur-md border border-white/10 whitespace-nowrap">
+											<p className="text-xs text-white/70">
+												{t("content.confirmClipboard", currentLanguage)}
+											</p>
+										</div>
 									)}
-								</button>
-								{clipboardText && !isClipboardLoading && !recorder.isRecording && (
-									<div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg bg-black/90 backdrop-blur-md border border-white/10 whitespace-nowrap">
-										<p className="text-xs text-white/70">
-											{t("content.confirmClipboard", currentLanguage)}
-										</p>
-									</div>
-								)}
+								</div>
 							</div>
 						),
 					},
@@ -1184,7 +1199,9 @@ export default function PlaygroundPage() {
 				onClose={() => setIsShareSheetOpen(false)}
 				content={{
 					original: processingState.transcribe?.text,
-					translation: processingState.nativeEcho?.text,
+					translation: processingState.nativeEcho?.text
+						? removeParentheticalContent(processingState.nativeEcho.text)
+						: undefined,
 					transliteration: transliterationText,
 					audio_base64: processingState.tts?.audio_base64,
 				}}
@@ -1200,6 +1217,8 @@ export default function PlaygroundPage() {
 				transliteration={selectedSegment?.transliteration}
 				segments={selectedSegment?.segments}
 				onTtsClick={handleLookupTts}
+				speed={lookupSpeed}
+				onSpeedChange={setLookupSpeed}
 				isTransliterationLoading={false}
 				isTranslationLoading={nativeEchoMutation.isPending}
 				isTtsLoading={ttsMutation.isPending}
@@ -1209,7 +1228,7 @@ export default function PlaygroundPage() {
 				onClose={() => setGameState(prev => ({ ...prev, isOpen: false }))}
 				texts={{
 					in: processingState.transcribe?.text || "",
-					out: gameState.text || "",
+					out: gameState.text ? removeParentheticalContent(gameState.text) : "",
 					lit: transliterationText,
 				}}
 				segments={gameState.segments}
@@ -1224,7 +1243,7 @@ export default function PlaygroundPage() {
 					if (!ttsCache[item.text]) {
 						// Using user's own API key for TTS
 						const ttsResult = await ttsMutation.mutateAsync({
-							text: item.text,
+							text: removeParentheticalContent(item.text),
 						})
 
 						// Update shared cache
