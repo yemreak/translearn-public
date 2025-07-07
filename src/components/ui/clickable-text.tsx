@@ -39,12 +39,9 @@
  *   onClick={(charIndex, segment) => console.log(charIndex, segment)}
  * />
  */
-import {
-	CheckCircleIcon,
-	DocumentDuplicateIcon,
-} from "@heroicons/react/24/outline"
+import { CheckCircleIcon, DocumentDuplicateIcon } from "@heroicons/react/24/outline"
 import { AnimatePresence, motion } from "framer-motion"
-import { type ReactNode, useState } from "react"
+import { type ReactNode, useState, useEffect } from "react"
 import { toast } from "sonner"
 
 function RefreshOverlay() {
@@ -92,13 +89,29 @@ export type ClickableTextProps = {
 
 export function ClickableText(props: ClickableTextProps) {
 	const [showCopyCheck, setShowCopyCheck] = useState(false)
-	const [persistentHighlight, setPersistentHighlight] = useState<
-		number | undefined
-	>(props.highlightIndex)
+	const [persistentHighlight, setPersistentHighlight] = useState<number | undefined>(
+		props.highlightIndex
+	)
+	const [tappedSegmentIndex, setTappedSegmentIndex] = useState<number | null>(null)
+	const [showHint, setShowHint] = useState(false)
 
 	const effectiveHighlight = props.isPersistentHighlight
 		? persistentHighlight ?? props.highlightIndex
 		: props.highlightIndex
+
+	// Show hint for first-time users on mobile
+	useEffect(() => {
+		if (props.highlightSegments && props.segments.length > 0) {
+			const hasSeenHint = localStorage.getItem("clickableTextHintShown")
+			if (!hasSeenHint && "ontouchstart" in window) {
+				setShowHint(true)
+				setTimeout(() => {
+					setShowHint(false)
+					localStorage.setItem("clickableTextHintShown", "true")
+				}, 3000)
+			}
+		}
+	}, [props.highlightSegments, props.segments.length])
 
 	// Split text into words and spaces, keeping both
 	const words = props.text.split(/(\s+)/)
@@ -161,6 +174,12 @@ export function ClickableText(props: ClickableTextProps) {
 		)
 
 		if (clickedSegment) {
+			// Show tap feedback
+			if (wordData.segmentIndex !== null) {
+				setTappedSegmentIndex(wordData.segmentIndex)
+				setTimeout(() => setTappedSegmentIndex(null), 300)
+			}
+
 			props.onClick({
 				charIndex,
 				word: wordData.cleanWord,
@@ -204,7 +223,7 @@ export function ClickableText(props: ClickableTextProps) {
 				// Apply underline to spaces that are part of segments
 				if (info.isSpace) {
 					const spaceChars = info.word.split("")
-					const renderedSpaceChars = spaceChars.map((char, charIndex) => {
+					const renderedSpaceChars = spaceChars.map((_char, charIndex) => {
 						const globalCharIndex = info.start + charIndex
 						const inSegment = charSegmentMap[globalCharIndex] !== null
 						const isHovered = charHoveredMap[globalCharIndex]
@@ -214,10 +233,12 @@ export function ClickableText(props: ClickableTextProps) {
 								key={charIndex}
 								className="relative"
 								style={{
-									borderBottom: `2px solid ${
-										isHovered
-											? "rgba(255, 255, 255, 0.5)"
-											: "rgba(255, 255, 255, 0.3)"
+									borderBottom: `3px solid ${
+										tappedSegmentIndex === charSegmentMap[globalCharIndex]
+											? "rgba(255, 255, 255, 0.9)"
+											: isHovered
+											? "rgba(255, 255, 255, 0.7)"
+											: "rgba(255, 255, 255, 0.5)"
 									}`,
 									display: "inline-block",
 									width: "0.25em", // Ensure space width is preserved
@@ -244,33 +265,50 @@ export function ClickableText(props: ClickableTextProps) {
 
 					// Apply underline style to characters in segments
 					return props.highlightSegments && inSegment ? (
-						<span
+						<motion.span
 							key={charIndex}
 							className="relative"
+							initial={
+								showHint && charSegmentMap[globalCharIndex] === 0 && charIndex === 0
+									? { y: 0 }
+									: false
+							}
+							animate={
+								showHint && charSegmentMap[globalCharIndex] === 0 && charIndex === 0
+									? { y: [-2, 0, -2] }
+									: {}
+							}
+							transition={{
+								duration: 0.5,
+								repeat: 3,
+								delay: charIndex * 0.05,
+							}}
 							style={{
-								borderBottom: `2px solid ${
-									isHovered
-										? "rgba(255, 255, 255, 0.5)"
-										: "rgba(255, 255, 255, 0.3)"
+								borderBottom: `3px solid ${
+									tappedSegmentIndex === charSegmentMap[globalCharIndex]
+										? "rgba(255, 255, 255, 0.9)"
+										: isHovered
+										? "rgba(255, 255, 255, 0.7)"
+										: "rgba(255, 255, 255, 0.5)"
 								}`,
 								display: "inline-block",
+								backgroundColor:
+									tappedSegmentIndex === charSegmentMap[globalCharIndex]
+										? "rgba(255, 255, 255, 0.1)"
+										: "transparent",
+								transition: "all 0.2s ease",
 							}}>
 							{char}
-						</span>
+						</motion.span>
 					) : (
 						<span key={charIndex}>{char}</span>
 					)
 				})
 
 				if (isHighlighted) {
-					const preHighlight = info.word.slice(
-						0,
-						effectiveHighlight - info.start
-					)
+					const preHighlight = info.word.slice(0, effectiveHighlight - info.start)
 					const highlight = info.word[effectiveHighlight - info.start]
-					const postHighlight = info.word.slice(
-						effectiveHighlight - info.start + 1
-					)
+					const postHighlight = info.word.slice(effectiveHighlight - info.start + 1)
 
 					return (
 						<span
@@ -292,7 +330,14 @@ export function ClickableText(props: ClickableTextProps) {
 				return (
 					<span
 						key={index}
-						className={`inline-block`}
+						className={`inline-block touch-manipulation ${
+							info.segmentIndex !== null ? "active:scale-[0.98] cursor-pointer" : ""
+						}`}
+						style={{
+							// Add padding for better touch targets on mobile
+							padding: info.segmentIndex !== null ? "4px 2px" : "0",
+							margin: info.segmentIndex !== null ? "-4px -2px" : "0",
+						}}
 						onClick={e => handleClick(e, info)}>
 						{renderedChars}
 					</span>
@@ -304,7 +349,7 @@ export function ClickableText(props: ClickableTextProps) {
 			// Apply underline to spaces that are part of segments
 			if (info.isSpace) {
 				const spaceChars = info.word.split("")
-				const renderedSpaceChars = spaceChars.map((char, charIndex) => {
+				const renderedSpaceChars = spaceChars.map((_char, charIndex) => {
 					const globalCharIndex = info.start + charIndex
 					const inSegment = charSegmentMap[globalCharIndex] !== null
 					const isHovered = charHoveredMap[globalCharIndex]
@@ -314,10 +359,12 @@ export function ClickableText(props: ClickableTextProps) {
 							key={charIndex}
 							className="relative"
 							style={{
-								borderBottom: `2px solid ${
-									isHovered
-										? "rgba(255, 255, 255, 0.5)"
-										: "rgba(255, 255, 255, 0.3)"
+								borderBottom: `3px solid ${
+									tappedSegmentIndex === charSegmentMap[globalCharIndex]
+										? "rgba(255, 255, 255, 0.9)"
+										: isHovered
+										? "rgba(255, 255, 255, 0.7)"
+										: "rgba(255, 255, 255, 0.5)"
 								}`,
 								display: "inline-block",
 								width: "0.25em", // Ensure space width is preserved
@@ -341,19 +388,41 @@ export function ClickableText(props: ClickableTextProps) {
 
 				// Apply underline style to characters in segments
 				return props.highlightSegments && inSegment ? (
-					<span
+					<motion.span
 						key={charIndex}
 						className="relative"
+						initial={
+							showHint && charSegmentMap[globalCharIndex] === 0 && charIndex === 0
+								? { y: 0 }
+								: false
+						}
+						animate={
+							showHint && charSegmentMap[globalCharIndex] === 0 && charIndex === 0
+								? { y: [-2, 0, -2] }
+								: {}
+						}
+						transition={{
+							duration: 0.5,
+							repeat: 3,
+							delay: charIndex * 0.05,
+						}}
 						style={{
-							borderBottom: `2px solid ${
-								isHovered
-									? "rgba(255, 255, 255, 0.5)"
-									: "rgba(255, 255, 255, 0.3)"
+							borderBottom: `3px solid ${
+								tappedSegmentIndex === charSegmentMap[globalCharIndex]
+									? "rgba(255, 255, 255, 0.9)"
+									: isHovered
+									? "rgba(255, 255, 255, 0.7)"
+									: "rgba(255, 255, 255, 0.5)"
 							}`,
 							display: "inline-block",
+							backgroundColor:
+								tappedSegmentIndex === charSegmentMap[globalCharIndex]
+									? "rgba(255, 255, 255, 0.1)"
+									: "transparent",
+							transition: "all 0.2s ease",
 						}}>
 						{char}
-					</span>
+					</motion.span>
 				) : (
 					<span key={charIndex}>{char}</span>
 				)
@@ -362,7 +431,14 @@ export function ClickableText(props: ClickableTextProps) {
 			return (
 				<span
 					key={index}
-					className={`inline-block`}
+					className={`inline-block touch-manipulation ${
+						info.segmentIndex !== null ? "active:scale-[0.98] cursor-pointer" : ""
+					}`}
+					style={{
+						// Add padding for better touch targets on mobile
+						padding: info.segmentIndex !== null ? "4px 2px" : "0",
+						margin: info.segmentIndex !== null ? "-4px -2px" : "0",
+					}}
 					onClick={e => handleClick(e, info)}>
 					{renderedChars}
 				</span>
@@ -371,14 +447,24 @@ export function ClickableText(props: ClickableTextProps) {
 	}
 
 	return (
-		<div className="group flex items-center gap-2">
+		<div className="group flex items-center gap-2 relative">
+			{/* Mobile hint */}
+			<AnimatePresence>
+				{showHint && (
+					<motion.div
+						initial={{ opacity: 0, y: 10 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -10 }}
+						className="absolute -top-8 left-0 text-xs text-white/60 whitespace-nowrap bg-black/80 px-2 py-1 rounded">
+						Tap phrases to explore →
+					</motion.div>
+				)}
+			</AnimatePresence>
 			<span
-				className={`relative inline-block cursor-pointer transition-opacity duration-200 ${
+				className={`relative inline-block cursor-pointer transition-opacity duration-200 select-none ${
 					props.className || ""
 				} ${props.isRefreshing ? "opacity-50" : ""}`}>
-				<AnimatePresence>
-					{props.isRefreshing && <RefreshOverlay />}
-				</AnimatePresence>
+				<AnimatePresence>{props.isRefreshing && <RefreshOverlay />}</AnimatePresence>
 				{renderText()}
 			</span>
 			<motion.button
